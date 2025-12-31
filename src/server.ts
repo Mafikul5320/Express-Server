@@ -9,11 +9,11 @@ const port = process.env.PORT;
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello Express js , welcome!')
-})
+});
 
 const pool = new Pool({
     connectionString: `${process.env.CNT_STD}`
-})
+});
 
 
 const initDB = async () => {
@@ -33,6 +33,7 @@ const initDB = async () => {
         CREATE TABLE IF NOT EXISTS todos(
         id SERIAL PRIMARY KEY,
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(200) NOT NULL,
         description TEXT,
         completed BOOLEAN DEFAULT false,
         due_date DATE,
@@ -44,6 +45,25 @@ const initDB = async () => {
 }
 
 initDB();
+
+
+// todo
+app.post("/todo", (req: Request, res: Response) => {
+    const { user_id, title, description } = req.body;
+
+    try {
+        const result = pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
+        // result.
+        res.send(result)
+    } catch (err: any) {
+        res.status(500).json({
+            sucess: false,
+            error: err.message,
+        })
+    }
+})
+
+
 
 
 app.post("/user", async (req: Request, res: Response) => {
@@ -99,6 +119,55 @@ app.get("/users/:id", async (req: Request, res: Response) => {
         })
     }
 })
+
+app.put("/users/:id", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { name, email } = req.body;
+    try {
+        const result = await pool.query(`UPDATE users SET name=$1 , email=$2 WHERE id=$3`, [name, email, id]);
+        if (result.rows.length === 0) {
+            res.json({
+                message: "user not found"
+            })
+        } else {
+            res.send({
+                message: "update sucessfull",
+                result: result.rows
+            });
+            console.log(result.rows)
+        }
+
+    } catch (err: any) {
+        res.status(500).json({
+            sucess: false,
+            error: err.message,
+        })
+    }
+})
+app.delete("/users/:id", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+        if (result.rows.length === 0) {
+            res.json({
+                message: "user not found"
+            })
+        } else {
+            res.send({
+                message: "update sucessfull",
+                result: result.rows
+            });
+            console.log(result.rows)
+        }
+
+    } catch (err: any) {
+        res.status(500).json({
+            sucess: false,
+            error: err.message,
+        })
+    }
+});
+
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
