@@ -62,6 +62,34 @@ app.post("/todo", (req: Request, res: Response) => {
         })
     }
 })
+app.patch("/todo", (req: Request, res: Response) => {
+    const { user_id, title, description } = req.body;
+
+    try {
+        const result = pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
+        // result.
+        res.send(result)
+    } catch (err: any) {
+        res.status(500).json({
+            sucess: false,
+            error: err.message,
+        })
+    }
+})
+app.delete("/todo", (req: Request, res: Response) => {
+    const { user_id, title, description } = req.body;
+
+    try {
+        const result = pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
+        // result.
+        res.send(result)
+    } catch (err: any) {
+        res.status(500).json({
+            sucess: false,
+            error: err.message,
+        })
+    }
+})
 
 
 
