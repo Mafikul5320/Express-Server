@@ -1,58 +1,23 @@
-import express, { json, Request, Response } from 'express';
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+import express, { Request, Response } from 'express';
+import config from './config';
+import { initDB, pool } from './config/DB';
 const app = express();
 app.use(express.json());
-dotenv.config();
-
-const port = process.env.PORT;
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello Express js , welcome!')
 });
 
-const pool = new Pool({
-    connectionString: `${process.env.CNT_STD}`
-});
-
-
-const initDB = async () => {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users(
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(150) NOT NULL,
-        email VARCHAR(200) UNIQUE NOT NULL,
-        age INT CHECK (age>=0),
-        phone VARCHAR (15),
-        address TEXT,
-        create_at TIMESTAMP DEFAULT NOW(),
-        update_at TIMESTAMP DEFAULT NOW()
-        )
-        `);
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS todos(
-        id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        title VARCHAR(200) NOT NULL,
-        description TEXT,
-        completed BOOLEAN DEFAULT false,
-        due_date DATE,
-        create_at TIMESTAMP DEFAULT NOW(),
-        update_at TIMESTAMP DEFAULT NOW()
-        )
-
-        `)
-}
 
 initDB();
 
 
 // todo
-app.post("/todo", (req: Request, res: Response) => {
+app.post("/todo", async (req: Request, res: Response) => {
     const { user_id, title, description } = req.body;
 
     try {
-        const result = pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
+        const result = await pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
         // result.
         res.send(result)
     } catch (err: any) {
@@ -61,32 +26,41 @@ app.post("/todo", (req: Request, res: Response) => {
             error: err.message,
         })
     }
-})
-app.patch("/todo", (req: Request, res: Response) => {
-    const { user_id, title, description } = req.body;
+});
+
+app.put("/update/:id", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title, description } = req.body;
+    console.log(title, description, id)
 
     try {
-        const result = pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
-        // result.
-        res.send(result)
-    } catch (err: any) {
+        const result = await pool.query(`UPDATE todos SET title=$1, description=$2 WHERE id=$3`, [title, description, id]);
+        res.status(201).send({
+            message: "update sucessfully",
+            sucess: result.rows[0]
+        })
+    } catch (error: any) {
         res.status(500).json({
             sucess: false,
-            error: err.message,
+            message: error.message
         })
     }
-})
-app.delete("/todo", (req: Request, res: Response) => {
-    const { user_id, title, description } = req.body;
+});
+
+
+app.delete("/delete/:id", async (req: Request, res: Response) => {
+    const { id } = req.params;
 
     try {
-        const result = pool.query(`INSERT INTO todos(user_id,title,description) VALUES($1, $2, $3) RETURNING *`, [user_id, title, description]);
-        // result.
-        res.send(result)
-    } catch (err: any) {
+        const result = await pool.query(`DELETE FROM todos WHERE id=$1`, [id]);
+        res.status(200).send({
+            sucess: true,
+            message: result.rows[0]
+        })
+    } catch (error: any) {
         res.status(500).json({
             sucess: false,
-            error: err.message,
+            message: error.message
         })
     }
 })
@@ -197,6 +171,8 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
 });
 
 
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
+
+
+app.listen(config.port, () => {
+    console.log(`Example app listening on port ${config.port}`)
 })
