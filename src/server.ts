@@ -1,9 +1,9 @@
 import express, { NextFunction, Request, Response } from 'express';
 import config from './config';
 import { initDB, pool } from './config/DB';
-import { logger } from './middleware/logger';
 import { userRoutes } from './modules/users/users.route';
 import { TodoRoute } from './modules/todos/todo.route';
+import { authRouter } from './modules/auth/auth.route';
 const app = express();
 app.use(express.json());
 
@@ -75,7 +75,6 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
 // todo
 app.use("/todo", TodoRoute)
 
-
 app.put("/update/:id", async (req: Request, res: Response) => {
     const { id } = req.params;
     const { title, description } = req.body;
@@ -95,7 +94,6 @@ app.put("/update/:id", async (req: Request, res: Response) => {
     }
 });
 
-
 app.delete("/delete/:id", async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -113,6 +111,9 @@ app.delete("/delete/:id", async (req: Request, res: Response) => {
     }
 })
 
+// user Auth
+
+app.use("/auth", authRouter)
 
 
 

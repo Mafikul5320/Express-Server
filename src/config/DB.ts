@@ -11,6 +11,8 @@ export const initDB = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(150) NOT NULL,
         email VARCHAR(200) UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role VARCHAR(60) NOT NULL,
         age INT CHECK (age>=0),
         phone VARCHAR (15),
         address TEXT,
